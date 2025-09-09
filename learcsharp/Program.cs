@@ -1,49 +1,48 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using learcsharp;
 
+// Héritage simple
+Chien rex = new Chien { Nom = "Rex" };
+rex.SeDeplacer();   // de Animal
+rex.Allaiter();     // de Mammifere
+rex.Aboyer();       // de Chien
 
- // 1. Définir le dictionnaire
-        Dictionary<int, Student> students = new Dictionary<int, Student>();
+// Héritage hiérarchique
+Chat minou = new Chat { Nom = "Minou" };
+minou.SeDeplacer();
+minou.Miauler();
 
-        // 2. Ajouter des étudiants
-        students.Add(1, new Student(1, "Alice", 15.5));
-        students.Add(2, new Student(2, "Bob", 12.0));
-        students.Add(3, new Student(3, "Charlie", 17.2));
+// Polymorphisme
+Animal a = new Chien { Nom = "Poli" };
+a.SeDeplacer(); // méthode d'Animal
 
-        // 3. Afficher la liste des étudiants
-        Console.WriteLine("Liste des étudiants :");
-        foreach (var kvp in students)
-        {
-            Console.WriteLine(kvp.Value);
-        }
+// Interface
+IDomestique domestique = new Chien();
+domestique.VivreAvecHumain();
+class Animal
+{
+    public string Nom { get; set; }
+    public void SeDeplacer() => Console.WriteLine("Je me déplace.");
+}
 
-        // 4. Recherche par Id
-        Console.WriteLine("\nEntrez l'Id de l'étudiant à rechercher :");
-        int idRecherche = int.Parse(Console.ReadLine());
-        if (students.TryGetValue(idRecherche, out Student etu))
-        {
-            Console.WriteLine("Étudiant trouvé : " + etu);
-        }
-        else
-        {
-            Console.WriteLine("Aucun étudiant avec cet Id.");
-        }
+class Mammifere : Animal
+{
+    public void Allaiter() => Console.WriteLine("Je nourris mes petits.");
+}
 
-        // 5. Supprimer un étudiant
-        Console.WriteLine("\nEntrez l'Id de l'étudiant à supprimer :");
-        int idSupp = int.Parse(Console.ReadLine());
-        if (students.Remove(idSupp))
-        {
-            Console.WriteLine("Étudiant supprimé avec succès.");
-        }
-        else
-        {
-            Console.WriteLine("Impossible de supprimer : Id inexistant.");
-        }
+interface IDomestique
+{
+    void VivreAvecHumain();
+}
 
-        // 6. Afficher à nouveau
-        Console.WriteLine("\nNouvelle liste des étudiants :");
-        foreach (var kvp in students)
-        {
-            Console.WriteLine(kvp.Value);
-        }
+class Chien : Mammifere, IDomestique
+{
+    public void Aboyer() => Console.WriteLine("Wouf !");
+    public void VivreAvecHumain() => Console.WriteLine("Je vis avec les humains comme animal de compagnie.");
+}
+
+class Chat : Mammifere, IDomestique
+{
+    public void Miauler() => Console.WriteLine("Miaou !");
+    public void VivreAvecHumain() => Console.WriteLine("Je vis avec les humains, mais je suis indépendant !");
+}
