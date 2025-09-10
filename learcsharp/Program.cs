@@ -1,9 +1,15 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using learcsharp;
 
-Exercise ex = new Exercise();
-ex.Run();
+Person p1 = new Person("Alice");
+Person p2 = new Person("Bob");
 
+// Utilisation des méthodes héritées de Object
+Console.WriteLine(p1.ToString());   // Person: Alice
+Console.WriteLine(p1.GetType());    // Coding.Exercise.Person
+Console.WriteLine(p1.GetHashCode()); // entier unique (dépend de l'objet)
+Console.WriteLine(p1.Equals(p2));   // False car Alice != Bob
+Console.WriteLine(p1.Equals(p1));   // True
 public class Person
 {
     public string Name { get; set; }
@@ -11,31 +17,11 @@ public class Person
     public Person(string name)
     {
         Name = name;
-        Console.WriteLine($"[Person] Bonjour {Name}");
     }
-}
 
-// Classe dérivée
-public class Student : Person
-{
-    public int Id { get; set; }
-    public string School { get; set; }
-
-    public Student(string name, int id, string school) : base(name)
+    // Redéfinition de ToString (hérité de Object)
+    public override string ToString()
     {
-        Id = id;
-        School = school;
-        Console.WriteLine($"[Student] Étudiant {Name}, Id: {Id}, École: {School}");
-    }
-}
-
-// Classe contenant la logique de l'exercice
-public class Exercise
-{
-    public void Run()
-    {
-        // Instanciation de deux étudiants
-        Student s1 = new Student("Alice", 101, "Université de Paris");
-        Student s2 = new Student("Bob", 102, "École Polytechnique");
+        return $"Person: {Name}";
     }
 }
