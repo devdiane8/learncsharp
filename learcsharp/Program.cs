@@ -1,28 +1,41 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using learcsharp;
 
-Chien rex = new Chien();
-rex.Nom = "Rex";           // OK : public
-rex.AfficherInfo();        // OK : méthode publique
-rex.Presenter();           // OK
+Exercise ex = new Exercise();
+ex.Run();
 
-class Animal
+public class Person
 {
-    private string secret = "Je suis privé";      // uniquement dans Animal
-    protected string espece = "Animal";           // accessible dans Animal + dérivées
-    public string Nom { get; set; }               // accessible partout
+    public string Name { get; set; }
 
-    public void AfficherInfo()
+    public Person(string name)
     {
-        Console.WriteLine($"Nom: {Nom}, Espèce: {espece}");
+        Name = name;
+        Console.WriteLine($"[Person] Bonjour {Name}");
     }
 }
 
-class Chien : Animal
+// Classe dérivée
+public class Student : Person
 {
-    public void Presenter()
+    public int Id { get; set; }
+    public string School { get; set; }
+
+    public Student(string name, int id, string school) : base(name)
     {
-        // Console.WriteLine(secret); ❌ Erreur : pas accessible (private)
-        Console.WriteLine($"Je suis un {espece} et je m'appelle {Nom}"); // OK (protected + public)
+        Id = id;
+        School = school;
+        Console.WriteLine($"[Student] Étudiant {Name}, Id: {Id}, École: {School}");
+    }
+}
+
+// Classe contenant la logique de l'exercice
+public class Exercise
+{
+    public void Run()
+    {
+        // Instanciation de deux étudiants
+        Student s1 = new Student("Alice", 101, "Université de Paris");
+        Student s2 = new Student("Bob", 102, "École Polytechnique");
     }
 }
