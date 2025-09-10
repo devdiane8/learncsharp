@@ -1,27 +1,44 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using learcsharp;
 
-Person p1 = new Person("Alice");
-Person p2 = new Person("Bob");
+// 1. Déclarer l’interface IPayment
 
-// Utilisation des méthodes héritées de Object
-Console.WriteLine(p1.ToString());   // Person: Alice
-Console.WriteLine(p1.GetType());    // Coding.Exercise.Person
-Console.WriteLine(p1.GetHashCode()); // entier unique (dépend de l'objet)
-Console.WriteLine(p1.Equals(p2));   // False car Alice != Bob
-Console.WriteLine(p1.Equals(p1));   // True
-public class Person
+Checkout checkout = new Checkout(new CreditCardPayment());
+checkout.Process(100000);
+Checkout checkout1 = new Checkout(new PaypalPayment());
+checkout1.Process(50000);
+public interface IPayment
 {
-    public string Name { get; set; }
+    void Pay(decimal amount);
+}
 
-    public Person(string name)
+
+public class PaypalPayment : IPayment
+{
+    public void Pay(decimal amount)
     {
-        Name = name;
+        Console.WriteLine($"Paypal payment for {amount}");
+    }
+}
+
+public class CreditCardPayment : IPayment
+{
+    public void Pay(decimal amount)
+    {
+        Console.WriteLine($"Credit card payment for {amount}");
+    }
+}
+
+public class Checkout
+{
+    private readonly IPayment _payment;
+
+    public Checkout(IPayment payment)
+    {
+        _payment = payment;
     }
 
-    // Redéfinition de ToString (hérité de Object)
-    public override string ToString()
+    public void Process(decimal amount)
     {
-        return $"Person: {Name}";
+        _payment.Pay(amount);
     }
 }
