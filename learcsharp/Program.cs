@@ -1,44 +1,137 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿
+var payments = new IPayment[]
+          {
+                new CreditCardPayment(),
+                new PaypalPayment(),
+                new CryptoPayment() // ajout sans changer CheckoutService
+          };
 
-// 1. Déclarer l’interface IPayment
+var checkout = new CheckoutService(payments);
 
-Checkout checkout = new Checkout(new CreditCardPayment());
-checkout.Process(100000);
-Checkout checkout1 = new Checkout(new PaypalPayment());
-checkout1.Process(50000);
+// 1) Découplage + utilisation simple
+var r1 = checkout.Process("credit-card", 100m);
+var r2 = checkout.Process("paypal", 49.99m);
+Console.WriteLine(r1);
+Console.WriteLine(r2);
+
+// 2) Extensibilité : le nouveau provider "crypto" marche sans changer le service
+var r3 = checkout.Process("crypto", 250m);
+Console.WriteLine(r3);
+
+// 3) Code générique + réutilisation : traiter plusieurs montants avec tous les providers
+var receipts = checkout.ProcessAll<IPayment>(new[] { 10m, 20m });
+foreach (var rc in receipts)
+    Console.WriteLine(rc);
+
+
+// ---1) Contrat (Découplage) ---
 public interface IPayment
 {
-    void Pay(decimal amount);
+    string Name { get; }
+    Receipt Pay(decimal amount);
 }
 
-
-public class PaypalPayment : IPayment
+public sealed class Receipt
 {
-    public void Pay(decimal amount)
+    public decimal Amount { get; }
+    public string Provider { get; }
+    public DateTime Timestamp { get; }
+
+    public Receipt(decimal amount, string provider, DateTime timestamp)
     {
-        Console.WriteLine($"Paypal payment for {amount}");
+        Amount = amount;
+        Provider = provider;
+        Timestamp = timestamp;
     }
+
+    public override string ToString() =>
+        $"[{Timestamp:HH:mm:ss}] {Provider} => {Amount:C}";
 }
 
-public class CreditCardPayment : IPayment
+// --- 2) Réutilisation du code via classe abstraite ---
+public abstract class PaymentBase : IPayment
 {
-    public void Pay(decimal amount)
+    public abstract string Name { get; }
+
+    public Receipt Pay(decimal amount)
     {
-        Console.WriteLine($"Credit card payment for {amount}");
+        // Logique commune (validation, horodatage, etc.)
+        if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be > 0");
+
+        // Hook optionnel pour comportement spécifique avant/après
+        BeforePay(amount);
+        var receipt = CreateReceipt(amount);
+        AfterPay(receipt);
+
+        return receipt;
     }
+
+    // Méthode utilitaire commune : REUTILISÉE par tous les paiements
+    protected Receipt CreateReceipt(decimal amount) =>
+        new Receipt(amount, Name, DateTime.Now);
+
+    // Hooks (extensibles par les dérivés)
+    protected virtual void BeforePay(decimal amount) { /* ex: audit, métriques... */ }
+    protected virtual void AfterPay(Receipt receipt) { /* ex: traçage... */ }
 }
 
-public class Checkout
+// --- 3) Implémentations concrètes (héritent et réutilisent PaymentBase) ---
+public sealed class CreditCardPayment : PaymentBase
 {
-    private readonly IPayment _payment;
+    public override string Name => "credit-card";
 
-    public Checkout(IPayment payment)
+    protected override void BeforePay(decimal amount)
     {
-        _payment = payment;
-    }
-
-    public void Process(decimal amount)
-    {
-        _payment.Pay(amount);
+        // Exemple : vérification simple
+        // Console.WriteLine("CC: Pré-autorisation OK");
     }
 }
+
+public sealed class PaypalPayment : PaymentBase
+{
+    public override string Name => "paypal";
+}
+
+// --- 5) Extensibilité : nouvelle implémentation, sans toucher au service ---
+public sealed class CryptoPayment : PaymentBase
+{
+    public override string Name => "crypto";
+
+    protected override void BeforePay(decimal amount)
+    {
+        // Exemple : vérifier un solde en cache, etc.
+    }
+}
+
+// --- 4) Service découplé + méthodes génériques ---
+public class CheckoutService
+{
+    private readonly Dictionary<string, IPayment> _providers;
+
+    // DI : on injecte un ensemble d'IPayment (découplage total des classes concrètes)
+    public CheckoutService(IEnumerable<IPayment> payments)
+    {
+        _providers = payments.ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    // Utilisation polymorphique : on ne connaît que le contrat
+    public Receipt Process(string providerName, decimal amount)
+    {
+        if (!_providers.TryGetValue(providerName, out var provider))
+            throw new InvalidOperationException($"Provider '{providerName}' not registered.");
+
+        return provider.Pay(amount);
+    }
+
+    // Méthode générique : traite des séquences d'amounts avec tous les providers
+    public IEnumerable<Receipt> ProcessAll<T>(IEnumerable<decimal> amounts) where T : IPayment
+    {
+        // On sélectionne seulement les providers du type T (ex: PaymentBase, IPayment, etc.)
+        var selected = _providers.Values.OfType<T>().Cast<IPayment>().ToArray();
+        foreach (var amount in amounts)
+            foreach (var p in selected)
+                yield return p.Pay(amount);
+    }
+}
+
+// --- Démo ---
